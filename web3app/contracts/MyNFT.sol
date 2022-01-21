@@ -9,9 +9,15 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract ChickenLife is ERC721, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
 
+    mapping(string => uint8) existingURIs;
+
     Counters.Counter private _tokenIdCounter;
 
     constructor() ERC721("ChickenLife", "CKL") {}
+
+     function isContentOwned(string memory uri) public view returns (bool) {
+        return existingURIs[uri] == 1;
+    }
 
     function _baseURI() internal pure override returns (string memory) {
         return "ipfs://QmURynbDSMoZigzgZ6QWuRKuX2ov26hvUUTXs4yuFJytHR";
@@ -37,5 +43,21 @@ contract ChickenLife is ERC721, ERC721URIStorage, Ownable {
         returns (string memory)
     {
         return super.tokenURI(tokenId);
+    }
+    function payToMint(
+        address recipient,
+        string memory metadataURI
+    ) public payable returns (uint256) {
+        require(existingURIs[metadataURI] != 1, 'NFT already minted!');
+        require (msg.value >= 0.05 ether, 'Need to pay up!');
+
+        uint256 newItemId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        existingURIs[metadataURI] = 1;
+
+        _mint(recipient, newItemId);
+        _setTokenURI(newItemId, metadataURI);
+
+        return newItemId;
     }
 }
